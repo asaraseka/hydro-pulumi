@@ -1,0 +1,650 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: hydrolixclusters.hydrolix.io
+spec:
+  group: hydrolix.io
+  names:
+    kind: HydrolixCluster
+    plural: hydrolixclusters
+    shortNames:
+    - hdxs
+    - hdx
+    singular: hydrolixcluster
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          status:
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+        type: object
+    served: true
+    storage: true
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: operator
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hdx-scaler
+  namespace: hydrolix
+rules:
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - list
+  - get
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - list
+  - get
+  - watch
+  - patch
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hdx-scaler
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hdx-scaler
+  namespace: hydrolix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hdx-scaler
+subjects:
+- kind: ServiceAccount
+  name: hdx-scaler
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: operator
+  namespace: hydrolix
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - events
+  verbs:
+  - create
+  - list
+- apiGroups:
+  - ''
+  resources:
+  - services
+  verbs:
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  - services
+  - configmaps
+  - secrets
+  verbs:
+  - create
+  - update
+  - delete
+  - patch
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  - daemonsets
+  verbs:
+  - create
+  - update
+  - delete
+  - patch
+  - get
+  - list
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - update
+  - delete
+  - patch
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  - jobs
+  verbs:
+  - create
+  - update
+  - delete
+  - patch
+  - get
+  - list
+  - watch
+- apiGroups:
+  - hydrolix.io
+  resources:
+  - hydrolixclusters
+  verbs:
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - postgres-operator.crunchydata.com
+  resources:
+  - postgresclusters
+  verbs:
+  - create
+  - update
+  - delete
+  - patch
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: operator
+  namespace: hydrolix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: operator
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-hydrolix
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - nodes
+  - nodes/metrics
+  - services
+  - endpoints
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-hydrolix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-hydrolix
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: acme
+  namespace: hydrolix
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  verbs:
+  - create
+- apiGroups:
+  - ''
+  resourceNames:
+  - traefik-tls
+  - acme-account
+  resources:
+  - secrets
+  verbs:
+  - delete
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: acme
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: acme
+  namespace: hydrolix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: acme
+subjects:
+- kind: ServiceAccount
+  name: acme
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: traefik
+  namespace: hydrolix
+rules:
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - list
+  - get
+  - watch
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: traefik
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: traefik
+  namespace: hydrolix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: traefik
+subjects:
+- kind: ServiceAccount
+  name: traefik
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: turbine-api
+  namespace: hydrolix
+rules:
+- apiGroups:
+  - hydrolix.io
+  resources:
+  - hydrolixclusters
+  verbs:
+  - get
+  - list
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - list
+  - patch
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: gke-nodepool-sa@-hydro.iam.gserviceaccount.com
+  labels:
+    hydrolix.io/credentialed: 'true'
+  name: turbine-api
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: turbine-api
+  namespace: hydrolix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: turbine-api
+subjects:
+- kind: ServiceAccount
+  name: turbine-api
+  namespace: hydrolix
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: gke-nodepool-sa@-hydro.iam.gserviceaccount.com
+  labels:
+    hydrolix.io/credentialed: 'true'
+  name: hydrolix
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vector-hydrolix
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  - nodes
+  - pods
+  verbs:
+  - list
+  - watch
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: gke-nodepool-sa@-hydro.iam.gserviceaccount.com
+  labels:
+    hydrolix.io/credentialed: 'true'
+  name: vector
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vector-hydrolix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vector-hydrolix
+subjects:
+- kind: ServiceAccount
+  name: vector
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: merge-controller
+  namespace: hydrolix
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - create
+  - update
+  - delete
+  - patch
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - pods/log
+  verbs:
+  - get
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: gke-nodepool-sa@-hydro.iam.gserviceaccount.com
+  labels:
+    hydrolix.io/credentialed: 'true'
+  name: merge-controller
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: merge-controller
+  namespace: hydrolix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: merge-controller
+subjects:
+- kind: ServiceAccount
+  name: merge-controller
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kinesis-coordinator
+  namespace: hydrolix
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - hydrolix.io
+  resources:
+  - hydrolixclusters
+  verbs:
+  - list
+  - patch
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: gke-nodepool-sa@-hydro.iam.gserviceaccount.com
+  labels:
+    hydrolix.io/credentialed: 'true'
+  name: kinesis-coordinator
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kinesis-coordinator
+  namespace: hydrolix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kinesis-coordinator
+subjects:
+- kind: ServiceAccount
+  name: kinesis-coordinator
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: version-service
+  namespace: hydrolix
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - list
+  - watch
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: version-service
+  namespace: hydrolix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: version-service
+  namespace: hydrolix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: version-service
+subjects:
+- kind: ServiceAccount
+  name: version-service
+  namespace: hydrolix
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: vector
+preemptionPolicy: PreemptLowerPriority
+value: 10000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: operator
+    hydrolix: 'true'
+  name: operator
+  namespace: hydrolix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: operator
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: 'true'
+        hydrolix.io/service: operator
+      labels:
+        app: operator
+    spec:
+      containers:
+      - env:
+        - name: PRIVATE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: VERSION
+          value: v4.20.2
+        - name: ZOOKEEPER_HOSTS
+          value: zookeeper-0.zoo
+        - name: IN_OPERATOR_CONTAINER
+          value: 'true'
+        - name: HYDROLIX_LICENSE
+          value: ''
+        - name: CONTAINER_CPU_LIMIT
+          value: '0.25'
+        - name: CONTAINER_MEMORY_LIMIT
+          value: 512Mi
+        - name: CONTAINER_EPHEMERAL_STORAGE_LIMIT
+          value: 256Mi
+        - name: GOMEMLIMIT
+          value: 429496729B
+        image: us-docker.pkg.dev/hdx-art/t/operator:9da516ac-ff
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - sleep
+              - '3'
+        name: operator
+        readinessProbe:
+          exec:
+            command:
+            - /usr/bin/status
+          failureThreshold: 1
+          periodSeconds: 10
+        resources:
+          limits:
+            ephemeral-storage: 256Mi
+            memory: 512Mi
+          requests:
+            cpu: 250m
+            ephemeral-storage: 256Mi
+            memory: 512Mi
+        volumeMounts: []
+      initContainers: []
+      serviceAccountName: operator
+      volumes: []
+

@@ -2,7 +2,6 @@
 
 import pulumi
 import pulumi_gcp as gcp
-import pulumi_kubernetes as kubernetes
 from pulumi_gcp import storage
 
 provider_cfg = pulumi.Config("gcp")
@@ -13,19 +12,16 @@ gcp_zone = provider_cfg.get("zone", "us-east1-b")
 # Set of configs with default values
 config = pulumi.Config()
 nodes_per_zone = config.get_int("nodesPerZone", 1)
-# nodes_machine_type = config.get("machineType", "e2-micro")
 nodes_machine_type = config.get("machineType", "e2-standard-8")
-# gke_cluster_name = config.get("kubernetes_cluster", "gke-cluster")
-# bucket_name = config.get("bucket", "hydrolix")
-# kubernetes_namespace_name = config.get("namespace", "hydrolix")
-# network_name = config.get("network", "gke-network")
-
-bucket_name = "asaraseka-hydrolix"
-ns_name = "hydrolix"
+gke_cluster_name = config.get("kubernetes_cluster", "gke-cluster")
+bucket_name = config.get("bucket", "asaraseka-hydrolix")
+bucket_region = config.get("bucket_region", gcp_region)
+kubernetes_namespace_name = config.get("namespace", "hydrolix")
+network_name = config.get("network", "gke-network")
 
 # Create subnet for GKE
 gke_network = gcp.compute.Network(
-    "gke-network",
+    network_name,
     auto_create_subnetworks=False,
     description="A virtual network for your GKE cluster(s)"
 )
@@ -51,7 +47,7 @@ gke_nodepool_sa = gcp.serviceaccount.Account(
 # Create a GCP resource (Storage Bucket)
 bucket = storage.Bucket(
     bucket_name,
-    location="US-EAST1",
+    location=bucket_region,
     storage_class="REGIONAL",
     name=bucket_name,
     force_destroy=True,
@@ -69,7 +65,7 @@ bucket_acl_full = gcp.storage.BucketAccessControl(
 
 # Create a cluster in the new network and subnet
 gke_cluster = gcp.container.Cluster(
-    "gke-cluster",
+    gke_cluster_name,
     # remove_default_node_pool=True,
     description="A GKE cluster",
     location=gcp_zone,
@@ -140,16 +136,13 @@ users:
       provideClusterInfo: true
 """)
 
-# namespace = kubernetes.core.v1.Namespace(ns_name,
-#                                          metadata={"name": ns_name},
-#                                          opts=pulumi.ResourceOptions(depends_on=gke_cluster)
-#                                          )
-
 # Export the DNS name of the bucket
+pulumi.export('stack_fqdn', f'{pulumi.get_organization()}/{pulumi.get_project()}/{pulumi.get_stack()}')
 pulumi.export('bucket_name', bucket.url)
-pulumi.export("networkName", gke_network.name)
-pulumi.export("networkId", gke_network.id)
-pulumi.export("clusterName", gke_cluster.name)
-pulumi.export("serviceAccount", gke_nodepool_sa.email)
-pulumi.export("clusterId", gke_cluster.id)
+pulumi.export('bucket_region', bucket_region)
+pulumi.export("network_name", gke_network.name)
+pulumi.export("network_id", gke_network.id)
+pulumi.export("cluster_name", gke_cluster.name)
+pulumi.export("service_account", gke_nodepool_sa.email)
+pulumi.export("cluster_id", gke_cluster.id)
 pulumi.export("kubeconfig", cluster_kubeconfig)

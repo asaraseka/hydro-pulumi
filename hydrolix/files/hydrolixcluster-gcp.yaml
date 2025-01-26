@@ -1,0 +1,194 @@
+apiVersion: hydrolix.io/v1
+kind: HydrolixCluster
+metadata:
+  name: hdx
+  namespace: hydrolix
+spec:
+  admin_email: some@email.me
+  # db_bucket_type: s3
+  db_bucket_region: us-east1
+  # db_bucket_credentials_method: static
+  db_bucket_url: gs://bucket-hydrolix
+  env: {}
+  hydrolix_name: hdx
+  hydrolix_url: https://hdx.somename.name
+  ip_allowlist:
+  - 0.0.0.0/0
+  # kubernetes_profile: generic
+  kubernetes_namespace: hydrolix
+  kubernetes_storage_class: standard
+  kubernetes_premium_storage_class: standard
+  overcommit: true
+  # enable_vector: false
+  scale:
+    acme:
+      replicas: 1
+      cpu: 0.05
+      memory: 64Mi
+    batch-head:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    batch-peer:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    decay:
+      replicas: 1
+      cpu: 0.1
+      memory: 128Mi
+    envoy:
+      replicas: 1
+      cpu: 0.05
+      memory: 64Mi
+    init-cluster:
+      replicas: 1
+      cpu: 0.5
+      memory: 256Mi
+    init-turbine-api:
+      replicas: 1
+      cpu: 0.5
+      memory: 256Mi
+    intake-api:
+      replicas: 1
+      cpu: 0.1
+      memory: 128Mi
+    job-purge:
+      replicas: 1
+      cpu: 0.05
+      memory: 128Mi
+    keycloak:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    load-sample-project:
+      replicas: 1
+      cpu: 0.1
+      memory: 128Mi
+    log-vacuum:
+      replicas: 1
+      cpu: 0.05
+      memory: 128Mi
+    merge:
+      replicas: 1
+      cpu: 0.1
+      memory: 128Mi
+    merge-cleanup:
+      replicas: 1
+      cpu: 0.1
+      memory: 128Mi
+    merge-head:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    merge-peer:
+      replicas: 1
+      cpu: 0.1
+      memory: 128Mi
+    monitor-ingest:
+      replicas: 1
+      cpu: 0.01
+      memory: 32Mi
+    operator:
+      replicas: 1
+      cpu: 0.1
+      memory: 128Mi
+    partition-vacuum:
+      replicas: 1
+      cpu: 0.1
+      memory: 128Mi
+    postgres:
+      replicas: 1
+      cpu: 0.5
+      memory: 512Mi
+      data_storage: 5Gi
+    prometheus:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+      data_storage: 5Gi
+    prune-locks:
+      replicas: 1
+      cpu: 0.05
+      memory: 64Mi
+    pushgateway:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    query-head:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    query-peer:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    rabbitmq:
+      replicas: 1
+      cpu: 0.5
+      memory: 512Mi
+      data_storage: 1Gi
+    reaper:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    redpanda:
+      replicas: 1
+      cpu: 0.5
+      memory: 512Mi
+      data_storage: 10Gi
+    refresh-job-statuses:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    rejects-vacuum:
+      replicas: 1
+      cpu: 0.05
+      memory: 64Mi
+    stale-job-monitor:
+      replicas: 1
+      cpu: 0.05
+      memory: 64Mi
+    stream-head:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    stream-peer:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    task-monitor:
+      replicas: 1
+      cpu: 0.1
+      memory: 128Mi
+    traefik:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    turbine-api:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    ui:
+      replicas: 1
+      cpu: 0.1
+      memory: 128Mi
+    usagemeter:
+      replicas: 1
+      cpu: 0.1
+      memory: 128Mi
+    validator:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+    version:
+      replicas: 1
+      cpu: 0.05
+      memory: 64Mi
+    zookeeper:
+      replicas: 1
+      cpu: 0.25
+      memory: 256Mi
+  scale_off: false
+  scale_profile: dev
+  limit_cpu: true
